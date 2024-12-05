@@ -706,7 +706,7 @@ function createTransStream(stream: any, endCallback?: Function) {
           created,
         })}\n\n`);
         !transStream.closed && transStream.end("data: [DONE]\n\n");
-        endCallback && endCallback();
+        endCallback && endCallback(convId);
         return;
       }
       if (rawResult.event_type != 2001)
@@ -732,7 +732,7 @@ function createTransStream(stream: any, endCallback?: Function) {
           created,
         })}\n\n`);
         !transStream.closed && transStream.end("data: [DONE]\n\n");
-        endCallback && endCallback();
+        endCallback && endCallback(convId);
         return;
       }
       const message = result.message;
