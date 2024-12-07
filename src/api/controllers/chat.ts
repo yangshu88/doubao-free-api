@@ -1,8 +1,8 @@
 import { PassThrough } from "stream";
+import crypto from "crypto";
 import path from "path";
 import _ from "lodash";
 import mime from "mime";
-import FormData from "form-data";
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 
 import APIException from "@/lib/exceptions/APIException.ts";

@@ -7,9 +7,9 @@
 
 支持高速流式输出、支持多轮对话、支持联网搜索、支持智能体对话（计划支持）、支持AI绘图（计划支持）、支持长文档解读（计划支持）、支持图像解析（计划支持），零配置部署，多路token支持，自动清理会话痕迹。
 
-与ChatGPT接口完全兼容。
+与OpenAI接口完全兼容。
 
-还有以下九个free-api欢迎关注：
+还有以下十个free-api欢迎关注：
 
 Moonshot AI（Kimi.ai）接口转API [kimi-free-api](https://github.com/LLM-Red-Team/kimi-free-api)
 
@@ -20,6 +20,8 @@ Moonshot AI（Kimi.ai）接口转API [kimi-free-api](https://github.com/LLM-Red-
 智谱AI (智谱清言) 接口转API [glm-free-api](https://github.com/LLM-Red-Team/glm-free-api)
 
 秘塔AI (Metaso) 接口转API [metaso-free-api](https://github.com/LLM-Red-Team/metaso-free-api)
+
+字节跳动（即梦AI）接口转API [jimeng-free-api](https://github.com/LLM-Red-Team/jimeng-free-api)
 
 讯飞星火（Spark）接口转API [spark-free-api](https://github.com/LLM-Red-Team/spark-free-api)
 
