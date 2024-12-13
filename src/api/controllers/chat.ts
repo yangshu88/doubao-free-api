@@ -587,6 +587,7 @@ function checkResult(result: AxiosResponse) {
  * @param stream 消息流
  */
 async function receiveStream(stream: any): Promise<any> {
+  let temp = Buffer.from('');
   return new Promise((resolve, reject) => {
     // 消息初始化
     const data = {
@@ -635,18 +636,28 @@ async function receiveStream(stream: any): Promise<any> {
         if (!message || ![2001, 2008].includes(message.content_type))
           return;
         const content = JSON.parse(message.content);
-        if (content.text) {
-          const text = content.text;
-          const exceptCharIndex = text.indexOf("�");
-          data.choices[0].message.content += text.substring(0, exceptCharIndex == -1 ? text.length : exceptCharIndex);
-        }
+        if (content.text)
+          data.choices[0].message.content += content.text;
       } catch (err) {
         logger.error(err);
         reject(err);
       }
     });
     // 将流数据喂给SSE转换器
-    stream.on("data", (buffer) => parser.feed(buffer.toString()));
+    stream.on("data", (buffer) => {
+      // 检查buffer是否以完整UTF8字符结尾
+      if (buffer.toString().indexOf('�') != -1) {
+        // 如果不完整则累积buffer直到收到完整字符
+        temp = Buffer.concat([temp, buffer]);
+        return;
+      }
+      // 将之前累积的不完整buffer拼接
+      if (temp.length > 0) {
+        buffer = Buffer.concat([temp, buffer]);
+        temp = Buffer.from('');
+      }
+      parser.feed(buffer.toString());
+    });
     stream.once("error", (err) => reject(err));
     stream.once("close", () => resolve(data));
   });
@@ -662,6 +673,7 @@ async function receiveStream(stream: any): Promise<any> {
  */
 function createTransStream(stream: any, endCallback?: Function) {
   let convId = "";
+  let temp = Buffer.from('');
   // 消息创建时间
   const created = util.unixTimestamp();
   // 创建转换流
@@ -710,8 +722,9 @@ function createTransStream(stream: any, endCallback?: Function) {
         endCallback && endCallback(convId);
         return;
       }
-      if (rawResult.event_type != 2001)
+      if (rawResult.event_type != 2001) {
         return;
+      }
       const result = _.attempt(() => JSON.parse(rawResult.event_data));
       if (_.isError(result))
         throw new Error(`Stream response invalid: ${rawResult.event_data}`);
@@ -740,9 +753,6 @@ function createTransStream(stream: any, endCallback?: Function) {
         return;
       const content = JSON.parse(message.content);
       if (content.text) {
-        const text = content.text;
-        const exceptCharIndex = text.indexOf("�");
-        const chunk = text.substring(0, exceptCharIndex == -1 ? text.length : exceptCharIndex);
         transStream.write(`data: ${JSON.stringify({
           id: convId,
           model: MODEL_NAME,
@@ -750,7 +760,7 @@ function createTransStream(stream: any, endCallback?: Function) {
           choices: [
             {
               index: 0,
-              delta: { role: "assistant", content: chunk },
+              delta: { role: "assistant", content: content.text },
               finish_reason: null,
             },
           ],
@@ -763,7 +773,20 @@ function createTransStream(stream: any, endCallback?: Function) {
     }
   });
   // 将流数据喂给SSE转换器
-  stream.on("data", (buffer) => parser.feed(buffer.toString()));
+  stream.on("data", (buffer) => {
+    // 检查buffer是否以完整UTF8字符结尾
+    if (buffer.toString().indexOf('�') != -1) {
+      // 如果不完整则累积buffer直到收到完整字符
+      temp = Buffer.concat([temp, buffer]);
+      return;
+    }
+    // 将之前累积的不完整buffer拼接
+    if (temp.length > 0) {
+      buffer = Buffer.concat([temp, buffer]);
+      temp = Buffer.from('');
+    }
+    parser.feed(buffer.toString());
+  });
   stream.once(
     "error",
     () => !transStream.closed && transStream.end("data: [DONE]\n\n")
